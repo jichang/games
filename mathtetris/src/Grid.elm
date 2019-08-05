@@ -10,10 +10,10 @@ type alias Grid =
   , cols: Int
   , tiles: List Tile }
 
-view : Grid -> Html a
-view grid =
+view : Grid -> List Tile -> Html a
+view grid tiles =
   let
-    cells = List.map (\tile -> cellView grid.rows grid.cols tile) grid.tiles
+    cells = List.map (\tile -> cellView grid.rows grid.cols tile) tiles
     paddingBottom = String.fromFloat ((toFloat grid.rows) / (toFloat grid.cols) * 100) ++ "%"
   in
     div
@@ -23,8 +23,8 @@ view grid =
 cellView : Int -> Int -> Tile -> Html a
 cellView rows cols tile =
   let
-    top = String.fromFloat ((toFloat tile.x) / (toFloat rows) * 100) ++ "%"
-    left = String.fromFloat ((toFloat tile.y) / (toFloat cols) * 100) ++ "%"
+    top = String.fromFloat ((toFloat tile.y) / (toFloat rows) * 100) ++ "%"
+    left = String.fromFloat ((toFloat tile.x) / (toFloat cols) * 100) ++ "%"
     w = String.fromFloat (1.0 / (toFloat cols) * 100) ++ "%"
     h = String.fromFloat (1.0 / (toFloat rows) * 100) ++ "%"
   in
