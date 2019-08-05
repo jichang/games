@@ -1,0 +1,32 @@
+{
+  "name": "mathtetris",
+  "version": "1.0.0",
+  "description": "a simple tetris game",
+  "main": "index.html",
+  "scripts": {
+    "start:mathtetris": "parcel ./mathtetris/index.html",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JacobChange/games.git"
+  },
+  "keywords": [
+    "simple",
+    "games"
+  ],
+  "author": "Jacob Chang",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JacobChange/games/issues"
+  },
+  "homepage": "https://github.com/JacobChange/games#readme",
+  "dependencies": {
+    "parcel-bundler": "^1.12.3"
+  },
+  "devDependencies": {
+    "elm": "^0.19.0-no-deps",
+    "elm-hot": "^1.1.0",
+    "node-elm-compiler": "^5.0.3"
+  }
+}
