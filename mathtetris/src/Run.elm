@@ -1,6 +1,7 @@
 module Run exposing (..)
 
 import Random
+import Time
 import Html exposing (Html, div, button, input, text, label)
 import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (..)
@@ -8,7 +9,7 @@ import Level exposing (Level(..))
 import Grid exposing (..)
 import Panel exposing (..)
 import Tile exposing (..)
-import Time
+import Value exposing (..)
 
 type alias Model =
   { level: Level
@@ -16,7 +17,7 @@ type alias Model =
   , generator: Random.Generator (Int, Int)
   , currTile: Maybe Tile
   , nextTile: Maybe Tile
-  , grid: Grid }
+  , grid: Grid.Model }
 
 type Msg
   = Tick Time.Posix
@@ -37,10 +38,7 @@ init level =
         Professional ->
           (10, 500)
     generator = Random.pair (Random.int 0 2) (Random.int 1 range)
-    grid =
-      { rows = 12
-      , cols = 9
-      , tiles = [ ] }
+    grid = Grid.init 12 9
     model =
       { level = level
       , grid = grid
@@ -60,15 +58,14 @@ update msg model =
         Just tile ->
           let
             y = tile.y + 1
-            currGrid = model.grid
             (currTile, grid) =
               case y < model.grid.rows of
                 True ->
                   (Just { tile | y = y }, model.grid)
                 False ->
-                  (Nothing, {currGrid | tiles = List.append currGrid.tiles [tile]})
+                  (Nothing, model.grid)
           in
-            ({ model | currTile = currTile, grid = grid}, Cmd.none)
+            ({ model | currTile = currTile, grid = grid }, Cmd.none)
         Nothing ->
           case model.nextTile of
             Just tile ->
@@ -77,7 +74,7 @@ update msg model =
               (model, Random.generate NewTile model.generator)
     NewTile (ty, val) ->
       let
-        value = Tile.newValue ty val
+        value = Value.init ty val
         tile =
           { x = model.grid.cols // 2
           , y = 0 
@@ -90,18 +87,27 @@ update msg model =
 view : Model -> Html Msg
 view model =
   let
-    tiles =
+    currTile =
       case model.currTile of
-        Just tile -> List.append model.grid.tiles [tile]
-        Nothing -> model.grid.tiles
+        Just tile ->
+          let
+            grid = model.grid
+            top = String.fromFloat ((toFloat tile.y) / (toFloat grid.rows) * 100) ++ "%"
+            left = String.fromFloat ((toFloat tile.x) / (toFloat grid.cols) * 100) ++ "%"
+            w = String.fromFloat (1.0 / (toFloat grid.cols) * 100) ++ "%"
+            h = String.fromFloat (1.0 / (toFloat grid.rows) * 100) ++ "%"
+          in
+            div [ class "cell", style "top" top, style "left" left, style "width" w, style "height" h ] [Tile.view tile]
+        Nothing ->
+          div [ class "cell" ] []
     nextTile =
       case model.nextTile of
-        Just tile -> div [] [ text (Tile.toText tile.value) ]
+        Just tile -> div [] [ Value.view tile.value ]
         Nothing -> div [] []
   in
     div [ class "page" ]
       [ nextTile
-      , Grid.view model.grid tiles
+      , div [ class "grid__container" ] [ Grid.view model.grid, currTile ]
       , Html.map PanelMsg (Panel.view ()) ]
 
 subscriptions : Model -> Sub Msg

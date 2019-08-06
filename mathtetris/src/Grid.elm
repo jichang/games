@@ -1,33 +1,49 @@
 module Grid exposing (..)
 
 import Browser
+import Array exposing (..)
 import Html exposing (Html, div)
 import Html.Attributes exposing (..)
-import Tile exposing (Tile)
+import Value exposing (..)
 
-type alias Grid =
+type alias Model =
   { rows: Int
   , cols: Int
-  , tiles: List Tile }
+  , cells: List (Maybe Value) }
 
-view : Grid -> List Tile -> Html a
-view grid tiles =
+init : Int -> Int -> Model
+init rows cols =
   let
-    cells = List.map (\tile -> cellView grid.rows grid.cols tile) tiles
+    cells = List.repeat (rows * cols) Nothing
+  in
+    { rows = rows
+    , cols = cols
+    , cells = cells }
+
+view : Model -> Html a
+view grid =
+  let
     paddingBottom = String.fromFloat ((toFloat grid.rows) / (toFloat grid.cols) * 100) ++ "%"
+    cells = List.indexedMap (\index cell -> cellView grid index cell) grid.cells
   in
     div
       [ class "grid", style "padding-bottom" paddingBottom ]
       [ div [ class "cells" ] cells ]
 
-cellView : Int -> Int -> Tile -> Html a
-cellView rows cols tile =
-  let
-    top = String.fromFloat ((toFloat tile.y) / (toFloat rows) * 100) ++ "%"
-    left = String.fromFloat ((toFloat tile.x) / (toFloat cols) * 100) ++ "%"
-    w = String.fromFloat (1.0 / (toFloat cols) * 100) ++ "%"
-    h = String.fromFloat (1.0 / (toFloat rows) * 100) ++ "%"
-  in
-    div
-      [ class "cell", style "top" top, style "left" left, style "width" w, style "height" h ]
-      [ Tile.view tile ]
+cellView : Model -> Int ->  Maybe Value -> Html a
+cellView grid index cell =
+  case cell of
+    Just value ->
+      let
+        x = index // grid.cols
+        y = remainderBy index grid.cols
+        top = String.fromFloat ((toFloat y) / (toFloat grid.rows) * 100) ++ "%"
+        left = String.fromFloat ((toFloat x) / (toFloat grid.cols) * 100) ++ "%"
+        w = String.fromFloat (1.0 / (toFloat grid.cols) * 100) ++ "%"
+        h = String.fromFloat (1.0 / (toFloat grid.rows) * 100) ++ "%"
+      in
+        div
+          [ class "cell", style "top" top, style "left" left, style "width" w, style "height" h ]
+          [ Value.view value ]
+    Nothing ->
+      div [ class "cell" ] []

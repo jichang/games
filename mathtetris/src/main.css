@@ -37,10 +37,14 @@ body {
   background: black;
 }
 
+.grid__container {
+  position: relative;
+  border: 1px solid gray;
+}
+
 .grid {
   flex: 1;
   position: relative;
-  border: 1px solid gray;
 
   height: 0;
 }
