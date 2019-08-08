@@ -9,22 +9,25 @@ import Value exposing (..)
 type alias Model =
   { rows: Int
   , cols: Int
-  , cells: List (Maybe Value) }
+  , cells: Array (Maybe Value) }
 
 init : Int -> Int -> Model
 init rows cols =
   let
-    cells = List.repeat (rows * cols) Nothing
+    cells = Array.repeat (rows * cols) Nothing
+    stubs = Array.repeat cols (Just (Operator 0))
   in
     { rows = rows
     , cols = cols
-    , cells = cells }
+    , cells = Array.append cells stubs }
 
 view : Model -> Html a
 view grid =
   let
     paddingBottom = String.fromFloat ((toFloat grid.rows) / (toFloat grid.cols) * 100) ++ "%"
-    cells = List.indexedMap (\index cell -> cellView grid index cell) grid.cells
+    cells =
+      Array.indexedMap (\index cell -> cellView grid index cell) grid.cells
+      |> Array.toList
   in
     div
       [ class "grid", style "padding-bottom" paddingBottom ]
@@ -35,8 +38,8 @@ cellView grid index cell =
   case cell of
     Just value ->
       let
-        x = index // grid.cols
-        y = remainderBy index grid.cols
+        x = remainderBy grid.cols index
+        y = index // grid.cols
         top = String.fromFloat ((toFloat y) / (toFloat grid.rows) * 100) ++ "%"
         left = String.fromFloat ((toFloat x) / (toFloat grid.cols) * 100) ++ "%"
         w = String.fromFloat (1.0 / (toFloat grid.cols) * 100) ++ "%"

@@ -45,6 +45,7 @@ body {
 .grid {
   flex: 1;
   position: relative;
+  overflow: hidden;
 
   height: 0;
 }

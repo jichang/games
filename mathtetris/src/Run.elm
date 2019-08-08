@@ -2,6 +2,7 @@ module Run exposing (..)
 
 import Random
 import Time
+import Array
 import Html exposing (Html, div, button, input, text, label)
 import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (..)
@@ -57,15 +58,19 @@ update msg model =
       case model.currTile of
         Just tile ->
           let
-            y = tile.y + 1
-            (currTile, grid) =
-              case y < model.grid.rows of
-                True ->
-                  (Just { tile | y = y }, model.grid)
-                False ->
-                  (Nothing, model.grid)
+            grid = model.grid
+            index = tile.y * model.grid.cols + tile.x
+            cell = Array.get (index + model.grid.cols) model.grid.cells
+            (currTile, newGrid) =
+              case cell of
+                Just (Just _) ->
+                  (Nothing, { grid | cells = Array.set index (Just tile.value) grid.cells })
+                Just Nothing ->
+                  (Just {tile | y = tile.y + 1}, model.grid)
+                Nothing ->
+                  (Just {tile | y = tile.y + 1}, model.grid)
           in
-            ({ model | currTile = currTile, grid = grid }, Cmd.none)
+            ({ model | currTile = currTile, grid = newGrid }, Cmd.none)
         Nothing ->
           case model.nextTile of
             Just tile ->
@@ -81,7 +86,11 @@ update msg model =
           , value = value }
       in
         ({ model | nextTile = Just tile}, Cmd.none)
-    PanelMsg _ ->
+    PanelMsg MoveLeft ->
+      (model, Cmd.none)
+    PanelMsg MoveRight ->
+      (model, Cmd.none)
+    PanelMsg MoveDown ->
       (model, Cmd.none)
 
 view : Model -> Html Msg
