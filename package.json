@@ -5,6 +5,7 @@
   "main": "index.html",
   "scripts": {
     "start:mathtetris": "parcel ./mathtetris/index.html",
+    "build:mathtetris": "parcel build ./mathtetris/index.html --public-url ./ --out-dir build/mathtetris",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
