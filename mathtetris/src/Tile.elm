@@ -3,13 +3,13 @@ module Tile exposing (..)
 import Browser
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (..)
-import Value exposing(..)
+import Term exposing(..)
 
 type alias Tile =
   { x: Int
   , y: Int
-  , value: Value }
+  , term: Term }
 
 view : Tile -> Html a
 view tile =
-  div [ class "tile" ] [ Value.view tile.value ]
+  div [ class "tile" ] [ Term.view tile.term ]

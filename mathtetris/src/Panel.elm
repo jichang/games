@@ -2,6 +2,7 @@ module Panel exposing (..)
 
 import Html exposing (Html, div, button, text)
 import Html.Events exposing (..)
+import Html.Attributes exposing (..)
 
 type Msg
   = MoveLeft
@@ -10,7 +11,7 @@ type Msg
 
 view : () -> Html Msg
 view () =
-  div []
-    [ button [ onClick MoveLeft ] [ text "Left" ]
-    , button [ onClick MoveRight ] [ text "Right" ]
-    , button [ onClick MoveDown ] [ text "Down" ] ]
+  div [ class "flex__box" ]
+    [ button [ class "button", onClick MoveLeft ] [ text "向左" ]
+    , div [class "flex__item"] [ button [class "button", onClick MoveDown ] [ text "向下" ]]
+    , button [ class "button", onClick MoveRight ] [ text "向右" ] ]

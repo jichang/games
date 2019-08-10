@@ -47,15 +47,7 @@ optionView currLevel level =
   in
     div [ class "form__field" ]
       [ input [ id inputId, checked isChecked, type_ "radio", name "level", onInput (\_ -> Choose level) ] []
-      , label [ for inputId ] [ text (toText level) ] ]
-
-toText : Level -> String
-toText level =
-  case level of
-    Easy -> "不咋地，十以内算术还掰手指"
-    Normal -> "一般，和小卖部老板打成平手"
-    Hard -> "优秀，师从体育老师"
-    Professional -> "专家，猜中过双色球三个球"
+      , label [ for inputId ] [ text (Level.toText level) ] ]
 
 toId : Level -> String
 toId level =

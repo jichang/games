@@ -48,10 +48,17 @@ update msg model =
           in
             ({model | stepModel = RunModel runModel}, Cmd.map RunMsg runCmd)
     (RunMsg runMsg, RunModel runModel) ->
-      let
-        (newRunModel, runCmd) = Run.update runMsg runModel
-      in
-        ({ model | stepModel = RunModel newRunModel}, Cmd.map RunMsg runCmd)
+      case runMsg of
+        Run.Restart ->
+          let
+            (prepareModel, prepareCmd) = Prepare.init ()
+          in
+            ({ stepModel = PrepareModel prepareModel }, Cmd.map PrepareMsg prepareCmd)
+        _ ->
+          let
+            (newRunModel, runCmd) = Run.update runMsg runModel
+          in
+            ({ model | stepModel = RunModel newRunModel}, Cmd.map RunMsg runCmd)
     (Tick _, RunModel runModel) ->
       (model, Cmd.none)
     _ ->

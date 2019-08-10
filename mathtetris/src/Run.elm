@@ -3,50 +3,46 @@ module Run exposing (..)
 import Random
 import Time
 import Array
-import Html exposing (Html, div, button, input, text, label)
+import Html exposing (Html, div, button, input, text, label, span, p, h2)
 import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (..)
 import Level exposing (Level(..))
 import Grid exposing (..)
 import Panel exposing (..)
 import Tile exposing (..)
-import Value exposing (..)
+import Term exposing (..)
 
 type alias Model =
   { level: Level
   , interval: Float
   , generator: Random.Generator (Int, Int)
+  , score: Int
   , currTile: Maybe Tile
   , nextTile: Maybe Tile
-  , grid: Grid.Model }
+  , grid: Grid.Model
+  , running: Bool }
 
 type Msg
   = Tick Time.Posix
   | NewTile (Int, Int)
   | PanelMsg Panel.Msg
+  | Restart
 
 init : Level -> (Model, Cmd Msg)
 init level =
   let
-    (range, interval) =
-      case level of
-        Easy ->
-          (10, 4000)
-        Normal ->
-          (10, 2000)
-        Hard ->
-          (10, 1000)
-        Professional ->
-          (10, 500)
-    generator = Random.pair (Random.int 0 2) (Random.int 1 range)
+    (range, interval) = (Level.toRange level, Level.toInterval level)
+    generator = Random.pair (Random.int 0 2) (Random.int 0 range)
     grid = Grid.init 12 9
     model =
       { level = level
       , grid = grid
       , generator = generator
+      , score = 0
       , currTile = Nothing
       , nextTile = Nothing
-      , interval = interval }
+      , interval = interval
+      , running = True }
     
   in
     (model, Random.generate NewTile generator)
@@ -57,40 +53,78 @@ update msg model =
     Tick _ ->
       case model.currTile of
         Just tile ->
-          let
-            grid = model.grid
-            index = tile.y * model.grid.cols + tile.x
-            cell = Array.get (index + model.grid.cols) model.grid.cells
-            (currTile, newGrid) =
-              case cell of
-                Just (Just _) ->
-                  (Nothing, { grid | cells = Array.set index (Just tile.value) grid.cells })
-                Just Nothing ->
-                  (Just {tile | y = tile.y + 1}, model.grid)
-                Nothing ->
-                  (Just {tile | y = tile.y + 1}, model.grid)
-          in
-            ({ model | currTile = currTile, grid = newGrid }, Cmd.none)
+            case isAvailable tile.x (tile.y + 1) model.grid of
+              True ->
+                let
+                  currTile = model.currTile
+                in
+                  ({model | currTile = Just { tile | y = tile.y + 1} }, Cmd.none)
+              False ->
+                let
+                  (count, grid) =
+                    Grid.update tile.x tile.y tile.term model.grid
+                    |> Grid.eliminate
+                in
+                  ({ model | score = model.score + count * 10, currTile = Nothing, grid = grid}, Cmd.none)
         Nothing ->
           case model.nextTile of
             Just tile ->
-              ({ model | currTile = Just tile, nextTile = Nothing }, Random.generate NewTile model.generator)
+              case isAvailable tile.x tile.y model.grid of
+                True ->
+                  ({ model | currTile = Just tile, nextTile = Nothing }, Random.generate NewTile model.generator)
+                False ->
+                  ({ model | running = False }, Cmd.none)
             Nothing ->
               (model, Random.generate NewTile model.generator)
     NewTile (ty, val) ->
       let
-        value = Value.init ty val
+        term = Term.init ty val
         tile =
           { x = model.grid.cols // 2
           , y = 0 
-          , value = value }
+          , term = term }
       in
         ({ model | nextTile = Just tile}, Cmd.none)
     PanelMsg MoveLeft ->
-      (model, Cmd.none)
+      case model.currTile of
+        Just tile ->
+            case isAvailable (tile.x - 1) tile.y model.grid of
+              True ->
+                let
+                  currTile = model.currTile
+                in
+                  ({model | currTile = Just { tile | x = tile.x - 1} }, Cmd.none)
+              False ->
+                (model, Cmd.none)
+        Nothing ->
+          (model, Cmd.none)
     PanelMsg MoveRight ->
-      (model, Cmd.none)
+      case model.currTile of
+        Just tile ->
+            case isAvailable (tile.x + 1) tile.y model.grid of
+              True ->
+                let
+                  currTile = model.currTile
+                in
+                  ({model | currTile = Just { tile | x = tile.x + 1} }, Cmd.none)
+              False ->
+                (model, Cmd.none)
+        Nothing ->
+          (model, Cmd.none)
     PanelMsg MoveDown ->
+      case model.currTile of
+        Just tile ->
+            case isAvailable tile.x (tile.y + 1) model.grid of
+              True ->
+                let
+                  currTile = model.currTile
+                in
+                  ({model | currTile = Just { tile | y = tile.y + 1} }, Cmd.none)
+              False ->
+                (model, Cmd.none)
+        Nothing ->
+          (model, Cmd.none)
+    Restart ->
       (model, Cmd.none)
 
 view : Model -> Html Msg
@@ -111,14 +145,31 @@ view model =
           div [ class "cell" ] []
     nextTile =
       case model.nextTile of
-        Just tile -> div [] [ Value.view tile.value ]
+        Just tile ->
+          p [ class "tile--next" ]
+            [ span [] [ text "下一个：" ]
+            , Term.view tile.term ]
         Nothing -> div [] []
+    score = div [] [ text ("得分：" ++ String.fromInt model.score)]
+    modal =
+      case model.running of
+        True -> div [] []
+        False ->
+          div [class "modal"]
+            [ h2 [] [text "游戏结束"]
+            , div [] [ p [] [text ("最终得分：" ++ String.fromInt model.score)] ]
+            , button [class "button", onClick Restart ] [ text "重新开始" ] ]
   in
     div [ class "page" ]
-      [ nextTile
+      [ div [ class "flex__box"] [ div [class "flex__item"] [nextTile], score ]
       , div [ class "grid__container" ] [ Grid.view model.grid, currTile ]
-      , Html.map PanelMsg (Panel.view ()) ]
+      , Html.map PanelMsg (Panel.view ())
+      , modal ]
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Time.every model.interval Tick
+  case model.running of
+    True ->
+      Time.every model.interval Tick
+    False ->
+      Sub.none
